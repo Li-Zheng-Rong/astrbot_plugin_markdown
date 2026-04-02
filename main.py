@@ -142,7 +142,7 @@ class Main(star.Star):
         if not plain_parts:
             return
 
-        plain_text = "\n\n".join(plain_parts)
+        plain_text = "".join(plain_parts)
 
         # Check rendering conditions: markdown detected + length threshold
         char_threshold = int(_cfg_val(config, "char_threshold"))

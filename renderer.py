@@ -8,7 +8,6 @@ text to PNG images by injecting content and taking element screenshots.
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from pathlib import Path
 
@@ -158,20 +157,23 @@ class MarkdownRenderer:
                 if vp and vp["width"] != width:
                     await self._page.set_viewport_size({"width": width, "height": 600})
 
-                # Call renderMarkdown() in the page
-                options_json = json.dumps(
-                    {
-                        "theme": theme,
-                        "fontSize": font_size,
-                        "footer": footer,
-                        "engine": engine or {},
-                    }
-                )
-                escaped_text = json.dumps(markdown_text)
+                # Reset completion flag before rendering to avoid
+                # stale true from a prior run (race-condition guard)
+                await self._page.evaluate("window.__renderComplete = false")
+
+                # Call renderMarkdown() using Playwright's structured
+                # arg passing — safer than f-string concatenation
+                options = {
+                    "theme": theme,
+                    "fontSize": font_size,
+                    "footer": footer,
+                    "engine": engine or {},
+                }
 
                 start = time.monotonic()
                 await self._page.evaluate(
-                    f"renderMarkdown({escaped_text}, {options_json})"
+                    "(args) => renderMarkdown(args.text, args.options)",
+                    {"text": markdown_text, "options": options},
                 )
 
                 # Wait for rendering to complete
