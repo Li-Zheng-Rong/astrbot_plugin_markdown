@@ -37,17 +37,14 @@ Node.js is required **only** for rebuilding the frontend assets in `dist/`.
 
 ## Installation
 
-1. Clone or copy this plugin into `data/plugins/astrbot_plugin_markdown`.
-2. Start AstrBot. The plugin manager installs dependencies from
-   `requirements.txt` automatically. To install them manually:
-   ```bash
-   pip install -r data/plugins/astrbot_plugin_markdown/requirements.txt
+1. Install this plugin in AstrBot webui.
    ```
-3. Install the Chromium browser binary:
+   https://github.com/Li-Zheng-Rong/astrbot_plugin_markdown
+   ```
+2. Install the Chromium browser binary:
    ```bash
    playwright install chromium
    ```
-4. Restart AstrBot to load the plugin.
 
 If the Chromium binary is not found at runtime, the plugin logs a warning and
 passes the message through unmodified.
