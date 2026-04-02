@@ -175,40 +175,7 @@ class Main(star.Star):
             render_timeout = int(_cfg_val(config, "render_timeout"))
             footer = str(_cfg_val(config, "footer"))
 
-            # Build engine options from config
-            md_html = bool(_cfg_val(config, "md_html"))
-            katex_trust = bool(_cfg_val(config, "katex_trust"))
-
-            if md_html and "md_html" not in self._security_warned:
-                logger.warning(
-                    "Markdown plugin: md_html is enabled — raw HTML in "
-                    "markdown will be rendered. Ensure all input is trusted."
-                )
-                self._security_warned.add("md_html")
-            if katex_trust and "katex_trust" not in self._security_warned:
-                logger.warning(
-                    "Markdown plugin: katex_trust is enabled — KaTeX can "
-                    "execute potentially unsafe commands. Ensure all input "
-                    "is trusted."
-                )
-                self._security_warned.add("katex_trust")
-
-            engine = {
-                "markdownIt": {
-                    "html": md_html,
-                    "linkify": bool(_cfg_val(config, "md_linkify")),
-                    "typographer": bool(_cfg_val(config, "md_typographer")),
-                    "quotes": str(_cfg_val(config, "md_quotes")),
-                },
-                "katex": {
-                    "throwOnError": bool(_cfg_val(config, "katex_throw_on_error")),
-                    "output": str(_cfg_val(config, "katex_output")),
-                    "trust": katex_trust,
-                },
-                "highlight": {
-                    "ignoreIllegals": bool(_cfg_val(config, "hljs_ignore_illegals")),
-                },
-            }
+            engine = self._build_engine_config(config)
 
             png_bytes = await self.renderer.render(
                 plain_text,
@@ -242,6 +209,42 @@ class Main(star.Star):
         """Release browser resources on plugin unload or AstrBot shutdown."""
         await self.renderer.terminate()
 
+    def _build_engine_config(self, config) -> dict:
+        """Build engine options dict from plugin configuration."""
+        md_html = bool(_cfg_val(config, "md_html"))
+        katex_trust = bool(_cfg_val(config, "katex_trust"))
+
+        if md_html and "md_html" not in self._security_warned:
+            logger.warning(
+                "Markdown plugin: md_html is enabled — raw HTML in "
+                "markdown will be rendered. Ensure all input is trusted."
+            )
+            self._security_warned.add("md_html")
+        if katex_trust and "katex_trust" not in self._security_warned:
+            logger.warning(
+                "Markdown plugin: katex_trust is enabled — KaTeX can "
+                "execute potentially unsafe commands. Ensure all input "
+                "is trusted."
+            )
+            self._security_warned.add("katex_trust")
+
+        return {
+            "markdownIt": {
+                "html": md_html,
+                "linkify": bool(_cfg_val(config, "md_linkify")),
+                "typographer": bool(_cfg_val(config, "md_typographer")),
+                "quotes": str(_cfg_val(config, "md_quotes")),
+            },
+            "katex": {
+                "throwOnError": bool(_cfg_val(config, "katex_throw_on_error")),
+                "output": str(_cfg_val(config, "katex_output")),
+                "trust": katex_trust,
+            },
+            "highlight": {
+                "ignoreIllegals": bool(_cfg_val(config, "hljs_ignore_illegals")),
+            },
+        }
+
     @filter.command("md_theme")
     async def cmd_theme(self, event: AstrMessageEvent, theme: str = "") -> None:
         """Switch markdown rendering theme (light/dark)."""
@@ -254,3 +257,101 @@ class Main(star.Star):
         config["theme"] = theme
         config.save_config()
         yield event.plain_result(f"Markdown theme set to: {theme}")
+
+    _TEST_MARKDOWN = (
+        "# Markdown Rendering Test\n\n"
+        "## Text Formatting\n\n"
+        "**Bold**, *italic*, ~~strikethrough~~, `inline code`, "
+        "==highlighted==, H~2~O (subscript), x^2^ (superscript).\n\n"
+        'Typographic: (tm) (c) (r) "quotes" -- and --- dashes.\n\n'
+        "## Code Block\n\n"
+        "```python\n"
+        "def fibonacci(n: int) -> list[int]:\n"
+        '    """Generate Fibonacci sequence."""\n'
+        "    a, b = 0, 1\n"
+        "    seq = []\n"
+        "    for _ in range(n):\n"
+        "        seq.append(a)\n"
+        "        a, b = b, a + b\n"
+        "    return seq\n"
+        "```\n\n"
+        "## Table\n\n"
+        "| Feature | Syntax | Renders As |\n"
+        "|---------|--------|------------|\n"
+        "| Bold | `**text**` | **text** |\n"
+        "| Italic | `*text*` | *text* |\n"
+        "| Code | `` `code` `` | `code` |\n\n"
+        "## Lists\n\n"
+        "1. First ordered item\n"
+        "   - Nested unordered\n"
+        "   - Another nested\n"
+        "2. Second ordered item\n"
+        "3. Third ordered item\n\n"
+        "## Blockquote\n\n"
+        '> "Mathematics is the queen of the sciences."\n'
+        "> — Carl Friedrich Gauss\n\n"
+        "## Inline Math\n\n"
+        "Einstein's equation $E = mc^2$, Euler's identity "
+        "$e^{i\\pi} + 1 = 0$, and a summation "
+        "$\\sum_{k=1}^{n} k = \\frac{n(n+1)}{2}$.\n\n"
+        "## Display Math\n\n"
+        "$$\n"
+        "\\int_0^\\infty e^{-x^2} \\, dx = \\frac{\\sqrt{\\pi}}{2}\n"
+        "$$\n\n"
+        "$$\n"
+        "\\mathbf{A} = \\begin{bmatrix} a_{11} & a_{12} \\\\\\ "
+        "a_{21} & a_{22} \\end{bmatrix}, \\quad "
+        "\\det(\\mathbf{A}) = a_{11}a_{22} - a_{12}a_{21}\n"
+        "$$\n\n"
+        "$$\n"
+        "\\begin{aligned}\n"
+        "\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\\\\n"
+        "\\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + "
+        "\\mu_0 \\varepsilon_0 \\frac{\\partial \\mathbf{E}}"
+        "{\\partial t}\n"
+        "\\end{aligned}\n"
+        "$$\n\n"
+        "## Footnotes\n\n"
+        "Markdown rendering is powered by markdown-it[^1] "
+        "with KaTeX[^2] for math support.\n\n"
+        "[^1]: A fast, spec-compliant CommonMark parser.\n"
+        "[^2]: The fastest math typesetting library for the web.\n\n"
+        "---\n\n"
+        "*Test complete — all extensions rendered successfully.*\n"
+    )
+
+    @filter.command("md_test")
+    async def cmd_test(self, event: AstrMessageEvent) -> None:
+        """Render a comprehensive test document covering all supported syntax."""
+        if not self._playwright_available:
+            yield event.plain_result(
+                "Playwright is not available. "
+                "Install with: pip install playwright && playwright install chromium"
+            )
+            return
+
+        config = self.context.get_config()
+        try:
+            width = int(_cfg_val(config, "width"))
+            theme = str(_cfg_val(config, "theme"))
+            font_size = int(_cfg_val(config, "font_size"))
+            render_timeout = int(_cfg_val(config, "render_timeout"))
+
+            engine = self._build_engine_config(config)
+
+            png_bytes = await self.renderer.render(
+                self._TEST_MARKDOWN,
+                width=width,
+                theme=theme,
+                font_size=font_size,
+                footer="Markdown Rendering Test",
+                timeout=render_timeout,
+                engine=engine,
+            )
+
+            img_path = _save_temp_png(png_bytes)
+            yield event.image_result(img_path)
+
+        except Exception as e:
+            logger.error(f"Markdown plugin: test render failed — {e}", exc_info=True)
+            yield event.plain_result(f"Test render failed: {e}")

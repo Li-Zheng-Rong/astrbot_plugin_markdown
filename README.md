@@ -115,6 +115,7 @@ changes take effect immediately without restarting the plugin.
 | Command                  | Description                             |
 |--------------------------|-----------------------------------------|
 | `/md_theme <light\|dark>` | Persistently change the rendering theme |
+| `/md_test`               | Render a test document covering all supported syntax |
 
 ## Security considerations
 
