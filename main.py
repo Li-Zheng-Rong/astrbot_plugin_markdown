@@ -53,7 +53,13 @@ def _get_temp_dir() -> str:
 
 
 def _save_temp_png(png_bytes: bytes) -> str:
-    """Save PNG bytes to a temp file and return the path."""
+    """Save PNG bytes to a temp file and return the path.
+
+    Note: Temp files are NOT cleaned up here. AstrBot's built-in
+    ``TempDirCleaner`` automatically purges the temp directory on a
+    periodic schedule (every 10 min, oldest-first when size limit is
+    exceeded), so explicit per-file deletion is unnecessary.
+    """
     temp_dir = _get_temp_dir()
     timestamp = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
     path = os.path.join(temp_dir, f"md_render_{timestamp}.png")
@@ -63,7 +69,13 @@ def _save_temp_png(png_bytes: bytes) -> str:
 
 
 def _cfg_val(config, key: str):
-    """Read a config value with fallback to defaults."""
+    """Read a config value with fallback to defaults.
+
+    Note: AstrBot deserialises ``_conf_schema.json`` via ``json.loads``,
+    so boolean fields are returned as native Python ``bool`` (not strings).
+    A bare ``bool(val)`` is therefore safe and will never hit the
+    ``bool("false") == True`` trap.
+    """
     try:
         val = config.get(key, _DEFAULTS.get(key))
     except Exception:

@@ -47,6 +47,12 @@ class MarkdownRenderer:
             self._playwright = await async_playwright().start()
             self._browser = await self._playwright.chromium.launch(
                 headless=True,
+                # --no-sandbox is required in Docker / rootless containers
+                # where the user namespace sandbox is unavailable.  The
+                # security surface is limited because md_html defaults to
+                # false (raw HTML stripped) and katex_trust defaults to
+                # false, so user-controlled content cannot inject
+                # executable markup into the page.
                 args=[
                     "--no-sandbox",
                     "--disable-gpu",
@@ -118,6 +124,10 @@ class MarkdownRenderer:
         Raises:
             RuntimeError: If rendering fails after retries.
         """
+        # Serialise renders: a Playwright page is NOT thread-safe, so
+        # concurrent evaluate() calls would corrupt state.  A page-pool
+        # could increase throughput, but adds complexity and memory cost
+        # that is unjustified for typical chatbot message rates.
         async with self._lock:
             return await self._render_impl(
                 markdown_text,

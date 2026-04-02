@@ -1,5 +1,7 @@
 """Unit tests for markdown_detect module."""
 
+# Import path matches AstrBot's fixed plugin layout (data/plugins/<name>/).
+# Tests are executed from the repository root via ``uv run python -m pytest``.
 from data.plugins.astrbot_plugin_markdown.markdown_detect import (
     compute_markdown_score,
     should_render,

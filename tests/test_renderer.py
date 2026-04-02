@@ -2,6 +2,12 @@
 
 These tests require Playwright with Chromium installed:
     pip install playwright && playwright install chromium
+
+Note: Some tests access private attributes (``_initialized``, ``_page``,
+``_ensure_browser``) because the renderer's public surface is just
+``render()`` / ``terminate()``.  Verifying browser lifecycle and
+per-render HTML output requires page-level inspection, which justifies
+the coupling to internal state.
 """
 
 import pytest
@@ -9,6 +15,8 @@ import pytest_asyncio
 
 pw = pytest.importorskip("playwright", reason="Playwright not installed — skipping renderer tests")
 
+# Import path matches AstrBot's fixed plugin layout (data/plugins/<name>/).
+# Tests are executed from the repository root via ``uv run python -m pytest``.
 from data.plugins.astrbot_plugin_markdown.renderer import MarkdownRenderer
 
 
