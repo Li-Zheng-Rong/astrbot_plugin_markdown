@@ -18,7 +18,7 @@ High-quality markdown-to-image rendering plugin for [AstrBot](https://github.com
 LLM Response (text with markdown)
     │
     ▼
-┌─ on_decorating_result (priority=10) ──────────────┐
+┌─ on_decorating_result (priority=10) ───────────────┐
 │  MarkdownDetector: pattern scoring + length check  │
 │  MarkdownRenderer: Playwright → headless Chromium  │
 │    ├─ render.html loads bundled JS (markdown-it)   │
@@ -30,8 +30,10 @@ LLM Response (text with markdown)
 
 ## Requirements
 
+- AstrBot >= 4.0.0
 - Python 3.10+
-- [Playwright](https://playwright.dev/python/) with Chromium
+- `playwright` Python package (installed from `requirements.txt`)
+- Chromium for Playwright (`playwright install chromium`)
 
 ## Installation
 
@@ -42,7 +44,7 @@ LLM Response (text with markdown)
    playwright install chromium
    ```
 
-3. Restart AstrBot. The plugin will be loaded automatically.
+If Chromium is missing, the plugin logs a warning and leaves the original text untouched.
 
 ## Configuration
 
@@ -50,20 +52,21 @@ All settings are configurable from the AstrBot dashboard via `_conf_schema.json`
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `enabled` | bool | `true` | Enable/disable the plugin |
-| `char_threshold` | int | `100` | Minimum text length to trigger rendering |
-| `score_threshold` | int | `2` | Minimum markdown score to trigger rendering |
-| `width` | int | `800` | Image width in pixels |
-| `theme` | string | `"light"` | `"light"` or `"dark"` |
+| `enabled` | bool | `true` | Enable or disable markdown-to-image rendering |
+| `char_threshold` | int | `100` | Minimum text length required before rendering is considered |
+| `score_threshold` | int | `2` | Minimum markdown score required before rendering |
+| `width` | int | `800` | Rendered image width in pixels |
+| `theme` | string | `"light"` | Rendering theme: `light` or `dark` |
 | `font_size` | int | `16` | Base font size in pixels |
-| `render_timeout` | int | `10` | Max seconds per render |
-| `footer` | string | `"Powered by AstrBot"` | Footer text (empty to hide) |
+| `render_timeout` | int | `10` | Maximum time in seconds allowed for one render |
+| `footer` | string | `"Powered by AstrBot"` | Footer text shown at the bottom of rendered images; empty hides it |
+| `llm_only` | bool | `true` | Only render LLM responses; command outputs such as `/help` are skipped |
 
-## Commands
+## Command
 
 | Command | Description |
 |---------|-------------|
-| `/md_theme <light\|dark>` | Switch rendering theme |
+| `/md_theme <light\|dark>` | Update the configured rendering theme |
 
 ## Development
 
@@ -77,9 +80,9 @@ npm install
 npm run build
 ```
 
-This requires Node.js 18+ (development only — end users do not need Node.js).
+`package-lock.json` is committed for reproducible builds. Node.js is only needed when rebuilding assets.
 
-### Running Tests
+### Running Test
 
 ```bash
 cd <AstrBot root>
@@ -88,4 +91,4 @@ uv run pytest data/plugins/astrbot_plugin_markdown/tests/ -v
 
 ## License
 
-See [LICENSE](LICENSE) file.
+See [LICENSE](LICENSE).

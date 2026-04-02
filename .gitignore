@@ -6,10 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-# Node.js (JS assets are pre-built in dist/, only needed for development)
+# Node.js (commit build inputs and pre-built dist/, ignore only installed deps)
 node_modules/
-src/
-package-lock.json
 
 # Distribution / packaging
 .Python
