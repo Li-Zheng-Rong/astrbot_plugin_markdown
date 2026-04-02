@@ -7,6 +7,8 @@ import markdownit from "markdown-it";
 import katexPlugin from "@vscode/markdown-it-katex";
 import subPlugin from "markdown-it-sub";
 import supPlugin from "markdown-it-sup";
+import markPlugin from "markdown-it-mark";
+import footnotePlugin from "markdown-it-footnote";
 import hljs from "highlight.js";
 
 /**
@@ -74,6 +76,8 @@ function createRenderer(options = {}) {
 
   md.use(subPlugin);
   md.use(supPlugin);
+  md.use(markPlugin);
+  md.use(footnotePlugin);
 
   return md;
 }

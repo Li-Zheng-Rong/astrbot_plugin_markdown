@@ -177,3 +177,38 @@ async def test_superscript_and_subscript(renderer):
 
     assert "<sub>" in html and "2" in html
     assert "<sup>" in html
+
+
+@pytest.mark.asyncio
+async def test_mark_highlight(renderer):
+    """==text== syntax should render as <mark>."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": "This is ==highlighted== text.",
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+    assert "<mark>" in html and "highlighted" in html
+
+
+@pytest.mark.asyncio
+async def test_footnotes(renderer):
+    """Footnote syntax [^1] should render with footnote section."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": "Some text[^1].\n\n[^1]: Footnote content here.",
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+    assert "footnote" in html.lower()
+    assert "Footnote content here" in html

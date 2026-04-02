@@ -15,10 +15,12 @@ highlighting.
 
 - Fenced code blocks with syntax highlighting for 190+ languages.
 - Inline and display LaTeX math via KaTeX (`$...$` and `$$...$$`).
-- Superscript (`^text^`) and subscript (`~text~`) syntax.
+- Superscript (`^text^`), subscript (`~text~`), ==highlight== (`==text==`), and
+  footnotes (`[^1]`).
 - Full CommonMark support: headings, tables, lists, blockquotes, links, images,
   horizontal rules.
-- Light and dark themes with GitHub-inspired styling.
+- Light and dark themes with GitHub-inspired styling and GitHub monospace font
+  stack for code blocks.
 - Typographic substitutions: `(tm)` → ™, `(c)` → ©, `--` → –, `---` → —.
 - All rendering-engine options (markdown-it, KaTeX, highlight.js) exposed as
   plugin settings and applied at runtime without restart.

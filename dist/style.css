@@ -15,8 +15,8 @@
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
     Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB";
-  --code-font: "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
-    "Microsoft YaHei Mono", monospace;
+  --code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 }
 
 [data-theme="dark"] {
@@ -218,6 +218,38 @@ html, body {
 /* Strong and emphasis */
 #content strong {
   font-weight: 600;
+}
+
+/* Highlighted text (==mark==) */
+#content mark {
+  background-color: #fff8c5;
+  color: var(--text-color);
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+}
+
+[data-theme="dark"] #content mark {
+  background-color: rgba(187, 128, 9, 0.4);
+}
+
+/* Footnotes */
+#content section.footnotes {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hr-color);
+  font-size: 0.875em;
+  color: var(--blockquote-color);
+}
+
+#content .footnote-ref a,
+#content .footnote-backref {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+#content .footnote-ref a:hover,
+#content .footnote-backref:hover {
+  text-decoration: underline;
 }
 
 /* Footer / watermark area */
