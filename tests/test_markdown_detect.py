@@ -83,9 +83,8 @@ class TestComputeMarkdownScore:
     def test_dollar_sign_not_math(self):
         # A single $ without matching close shouldn't score as math
         text = "The price is $100 for one item."
-        # This may or may not match depending on regex specifics
-        # The key is it shouldn't crash
-        compute_markdown_score(text)
+        score = compute_markdown_score(text)
+        assert score < 3, "Lone $ sign should not produce a high math score"
 
 
 class TestShouldRender:

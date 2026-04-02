@@ -222,9 +222,13 @@ class Main(star.Star):
             )
 
         except Exception as e:
-            logger.error(f"Markdown plugin: render failed — {e}")
+            logger.error(f"Markdown plugin: render failed — {e}", exc_info=True)
             # On failure, leave the original text untouched;
             # built-in t2i may still convert it if enabled.
+
+    async def terminate(self) -> None:
+        """Release browser resources on plugin unload or AstrBot shutdown."""
+        await self.renderer.terminate()
 
     @filter.command("md_theme")
     async def cmd_theme(self, event: AstrMessageEvent, theme: str = "") -> None:

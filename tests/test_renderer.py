@@ -7,6 +7,8 @@ These tests require Playwright with Chromium installed:
 import pytest
 import pytest_asyncio
 
+pw = pytest.importorskip("playwright", reason="Playwright not installed — skipping renderer tests")
+
 from data.plugins.astrbot_plugin_markdown.renderer import MarkdownRenderer
 
 

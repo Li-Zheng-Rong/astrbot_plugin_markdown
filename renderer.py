@@ -75,18 +75,18 @@ class MarkdownRenderer:
         try:
             if self._page and not self._page.is_closed():
                 await self._page.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Markdown renderer: page close error — {e}")
         try:
             if self._browser:
                 await self._browser.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Markdown renderer: browser close error — {e}")
         try:
             if self._playwright:
                 await self._playwright.stop()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Markdown renderer: playwright stop error — {e}")
         self._page = None
         self._browser = None
         self._playwright = None
