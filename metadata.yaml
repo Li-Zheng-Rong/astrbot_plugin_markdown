@@ -1,7 +1,7 @@
 name: astrbot_plugin_markdown
 display_name: markdown 自动转图片
 desc: vscode 同款 markdown 渲染器，在 llm 输出包含 markdown 时自动转为 github 风格的渲染图片
-version: 0.2.3
+version: 0.2.4
 author: zijinshanren
 repo: https://github.com/Li-Zheng-Rong/astrbot_plugin_markdown
 astrbot_version: ">=4.0.0"
