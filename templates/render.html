@@ -20,14 +20,20 @@
     // Global state
     window.__renderComplete = false;
     let md = null;
+    let engineKey = "";
 
     /**
-     * Initialize the markdown-it renderer.
+     * (Re)initialize the renderer when engine configuration changes.
+     * @param {object} [engine] - Options forwarded to createRenderer
      */
-    function initRenderer() {
-      if (!md) {
-        md = MarkdownBundle.createRenderer();
+    function initRenderer(engine) {
+      const normalized = engine || {};
+      const key = JSON.stringify(normalized);
+      if (md && key === engineKey) {
+        return;
       }
+      md = MarkdownBundle.createRenderer(normalized);
+      engineKey = key;
     }
 
     /**
@@ -37,12 +43,13 @@
      * @param {string} [options.theme] - "light" or "dark"
      * @param {number} [options.fontSize] - Base font size in px
      * @param {string} [options.footer] - Footer text
+     * @param {object} [options.engine] - Engine options for createRenderer
      */
     function renderMarkdown(text, options = {}) {
       window.__renderComplete = false;
 
       try {
-        initRenderer();
+        initRenderer(options.engine);
 
         // Apply theme
         const theme = options.theme || "light";

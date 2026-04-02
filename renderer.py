@@ -100,6 +100,7 @@ class MarkdownRenderer:
         font_size: int = 16,
         footer: str = "",
         timeout: int = 10,
+        engine: dict | None = None,
     ) -> bytes:
         """Render markdown text to PNG bytes.
 
@@ -110,6 +111,7 @@ class MarkdownRenderer:
             font_size: Base font size in pixels.
             footer: Optional footer text.
             timeout: Max seconds to wait for rendering.
+            engine: Engine options forwarded to the JS createRenderer.
 
         Returns:
             PNG image bytes.
@@ -125,6 +127,7 @@ class MarkdownRenderer:
                 font_size=font_size,
                 footer=footer,
                 timeout=timeout,
+                engine=engine,
             )
 
     async def _render_impl(
@@ -136,6 +139,7 @@ class MarkdownRenderer:
         font_size: int,
         footer: str,
         timeout: int,
+        engine: dict | None = None,
     ) -> bytes:
         last_error: Exception | None = None
 
@@ -160,6 +164,7 @@ class MarkdownRenderer:
                         "theme": theme,
                         "fontSize": font_size,
                         "footer": footer,
+                        "engine": engine or {},
                     }
                 )
                 escaped_text = json.dumps(markdown_text)

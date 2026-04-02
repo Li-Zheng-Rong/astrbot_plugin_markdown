@@ -9,16 +9,36 @@ import hljs from "highlight.js";
 
 /**
  * Create a configured markdown-it instance.
- * @param {object} [options] - Override options
+ *
+ * All options use safe defaults when omitted.  Dangerous options
+ * ({@code html}, {@code trust}) must be set to {@code true} explicitly.
+ *
+ * @param {object} [options]                          Grouped engine options
+ * @param {object} [options.markdownIt]               markdown-it core options
+ * @param {boolean} [options.markdownIt.html=false]   Allow raw HTML tags
+ * @param {boolean} [options.markdownIt.linkify=true] Auto-link plain URLs
+ * @param {boolean} [options.markdownIt.typographer=true] Typographic replacements
+ * @param {string}  [options.markdownIt.quotes="\"\"''"]  Quote characters
+ * @param {object} [options.katex]                    KaTeX plugin options
+ * @param {boolean} [options.katex.throwOnError=false] Throw on parse errors
+ * @param {string}  [options.katex.output="htmlAndMathml"] Output format
+ * @param {boolean} [options.katex.trust=false]       Allow unsafe commands
+ * @param {object} [options.highlight]                highlight.js options
+ * @param {boolean} [options.highlight.ignoreIllegals=true] Tolerate syntax errors
  * @returns {object} markdown-it instance
  */
 function createRenderer(options = {}) {
+  const mdOpts = options.markdownIt || {};
+  const katexOpts = options.katex || {};
+  const hljsOpts = options.highlight || {};
+
+  const ignoreIllegals = hljsOpts.ignoreIllegals !== false;
+
   const md = markdownit({
-    // Render untrusted markdown safely: allow markdown syntax, not raw HTML.
-    html: false,
-    linkify: true,
-    typographer: true,
-    quotes: "\"\"''",
+    html: mdOpts.html === true,
+    linkify: mdOpts.linkify !== false,
+    typographer: mdOpts.typographer !== false,
+    quotes: mdOpts.quotes || "\"\"''",
     highlight(str, lang) {
       const language = lang && hljs.getLanguage(lang) ? lang : null;
       const codeClass = language
@@ -29,7 +49,7 @@ function createRenderer(options = {}) {
         try {
           return (
             `<pre class="${codeClass}"><code>` +
-            hljs.highlight(str, { language, ignoreIllegals: true }).value +
+            hljs.highlight(str, { language, ignoreIllegals }).value +
             "</code></pre>"
           );
         } catch (_) {
@@ -42,13 +62,12 @@ function createRenderer(options = {}) {
         "</code></pre>"
       );
     },
-    ...options,
   });
 
   md.use(katexPlugin, {
-    throwOnError: false,
-    output: "htmlAndMathml",
-    trust: false,
+    throwOnError: katexOpts.throwOnError === true,
+    output: katexOpts.output || "htmlAndMathml",
+    trust: katexOpts.trust === true,
   });
 
   return md;

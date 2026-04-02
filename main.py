@@ -29,6 +29,17 @@ _DEFAULTS = {
     "render_timeout": 10,
     "footer": "Powered by AstrBot",
     "llm_only": True,
+    # Engine: markdown-it
+    "md_html": False,
+    "md_linkify": True,
+    "md_typographer": True,
+    "md_quotes": "\"\"''",
+    # Engine: KaTeX
+    "katex_throw_on_error": False,
+    "katex_output": "htmlAndMathml",
+    "katex_trust": False,
+    # Engine: highlight.js
+    "hljs_ignore_illegals": True,
 }
 
 
@@ -67,6 +78,7 @@ class Main(star.Star):
         super().__init__(context)
         self.renderer = MarkdownRenderer()
         self._playwright_available: bool | None = None
+        self._security_warned: set[str] = set()
 
     async def initialize(self) -> None:
         """Check Playwright availability on startup."""
@@ -151,6 +163,41 @@ class Main(star.Star):
             render_timeout = int(_cfg_val(config, "render_timeout"))
             footer = str(_cfg_val(config, "footer"))
 
+            # Build engine options from config
+            md_html = bool(_cfg_val(config, "md_html"))
+            katex_trust = bool(_cfg_val(config, "katex_trust"))
+
+            if md_html and "md_html" not in self._security_warned:
+                logger.warning(
+                    "Markdown plugin: md_html is enabled — raw HTML in "
+                    "markdown will be rendered. Ensure all input is trusted."
+                )
+                self._security_warned.add("md_html")
+            if katex_trust and "katex_trust" not in self._security_warned:
+                logger.warning(
+                    "Markdown plugin: katex_trust is enabled — KaTeX can "
+                    "execute potentially unsafe commands. Ensure all input "
+                    "is trusted."
+                )
+                self._security_warned.add("katex_trust")
+
+            engine = {
+                "markdownIt": {
+                    "html": md_html,
+                    "linkify": bool(_cfg_val(config, "md_linkify")),
+                    "typographer": bool(_cfg_val(config, "md_typographer")),
+                    "quotes": str(_cfg_val(config, "md_quotes")),
+                },
+                "katex": {
+                    "throwOnError": bool(_cfg_val(config, "katex_throw_on_error")),
+                    "output": str(_cfg_val(config, "katex_output")),
+                    "trust": katex_trust,
+                },
+                "highlight": {
+                    "ignoreIllegals": bool(_cfg_val(config, "hljs_ignore_illegals")),
+                },
+            }
+
             png_bytes = await self.renderer.render(
                 plain_text,
                 width=width,
@@ -158,6 +205,7 @@ class Main(star.Star):
                 font_size=font_size,
                 footer=footer,
                 timeout=render_timeout,
+                engine=engine,
             )
 
             img_path = _save_temp_png(png_bytes)

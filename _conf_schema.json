@@ -44,5 +44,46 @@
     "description": "Only render LLM responses. When enabled, command outputs (e.g. /help) are not rendered.",
     "type": "bool",
     "default": true
+  },
+  "md_html": {
+    "description": "⚠️ SECURITY WARNING: Allow raw HTML tags in markdown. When enabled, HTML embedded in markdown is rendered as-is, which may allow script injection from untrusted sources. Keep disabled unless all input is trusted.",
+    "type": "bool",
+    "default": false
+  },
+  "md_linkify": {
+    "description": "Automatically convert plain-text URLs into clickable links.",
+    "type": "bool",
+    "default": true
+  },
+  "md_typographer": {
+    "description": "Enable typographic replacements: (tm) → ™, (c) → ©, -- → –, --- → —.",
+    "type": "bool",
+    "default": true
+  },
+  "md_quotes": {
+    "description": "Quote replacement characters used by the typographer (4-char string: open-double, close-double, open-single, close-single). Default keeps ASCII straight quotes.",
+    "type": "string",
+    "default": "\"\"''"
+  },
+  "katex_throw_on_error": {
+    "description": "Throw an exception on invalid LaTeX instead of rendering an error message inline.",
+    "type": "bool",
+    "default": false
+  },
+  "katex_output": {
+    "description": "KaTeX output format.",
+    "type": "string",
+    "default": "htmlAndMathml",
+    "options": ["html", "mathml", "htmlAndMathml"]
+  },
+  "katex_trust": {
+    "description": "⚠️ SECURITY WARNING: Allow KaTeX commands that can generate arbitrary HTML (e.g. \\href, \\url). This may enable script injection from untrusted sources. Keep disabled unless all input is trusted.",
+    "type": "bool",
+    "default": false
+  },
+  "hljs_ignore_illegals": {
+    "description": "Continue highlighting even when the code contains syntax errors for the declared language.",
+    "type": "bool",
+    "default": true
   }
 }
