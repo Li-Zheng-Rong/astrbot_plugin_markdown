@@ -158,3 +158,22 @@ async def test_raw_html_is_escaped(renderer):
 
     assert '<span class="unsafe">hello</span>' in text
     assert "&lt;span" in html
+
+
+@pytest.mark.asyncio
+async def test_superscript_and_subscript(renderer):
+    """Superscript (^text^) and subscript (~text~) syntax should render."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": "H~2~O and x^2^",
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+
+    assert "<sub>" in html and "2" in html
+    assert "<sup>" in html

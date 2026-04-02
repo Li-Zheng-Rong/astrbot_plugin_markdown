@@ -7,9 +7,11 @@
     "build": "node build.mjs"
   },
   "dependencies": {
+    "@vscode/markdown-it-katex": "^1.1.1",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
-    "@vscode/markdown-it-katex": "^1.1.1"
+    "markdown-it-sub": "^2.0.0",
+    "markdown-it-sup": "^2.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"

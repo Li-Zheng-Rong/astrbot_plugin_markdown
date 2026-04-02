@@ -5,6 +5,8 @@
 
 import markdownit from "markdown-it";
 import katexPlugin from "@vscode/markdown-it-katex";
+import subPlugin from "markdown-it-sub";
+import supPlugin from "markdown-it-sup";
 import hljs from "highlight.js";
 
 /**
@@ -69,6 +71,9 @@ function createRenderer(options = {}) {
     output: katexOpts.output || "htmlAndMathml",
     trust: katexOpts.trust === true,
   });
+
+  md.use(subPlugin);
+  md.use(supPlugin);
 
   return md;
 }

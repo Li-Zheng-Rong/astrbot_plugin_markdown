@@ -15,6 +15,7 @@ highlighting.
 
 - Fenced code blocks with syntax highlighting for 190+ languages.
 - Inline and display LaTeX math via KaTeX (`$...$` and `$$...$$`).
+- Superscript (`^text^`) and subscript (`~text~`) syntax.
 - Full CommonMark support: headings, tables, lists, blockquotes, links, images,
   horizontal rules.
 - Light and dark themes with GitHub-inspired styling.
