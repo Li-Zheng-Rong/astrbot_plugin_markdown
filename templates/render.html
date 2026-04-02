@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../dist/katex.min.css">
+  <link rel="stylesheet" href="../dist/hljs-github-light.css" id="hljs-theme">
+  <link rel="stylesheet" href="../dist/style.css">
+  <style>
+    /* Prevent any layout shift during rendering */
+    html { overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div id="content"></div>
+  <div id="footer"></div>
+
+  <script src="../dist/bundle.js"></script>
+  <script>
+    // Global state
+    window.__renderComplete = false;
+    let md = null;
+
+    /**
+     * Initialize the markdown-it renderer.
+     */
+    function initRenderer() {
+      if (!md) {
+        md = MarkdownBundle.createRenderer();
+      }
+    }
+
+    /**
+     * Render markdown text into the #content element.
+     * @param {string} text - Raw markdown text
+     * @param {object} [options] - Rendering options
+     * @param {string} [options.theme] - "light" or "dark"
+     * @param {number} [options.fontSize] - Base font size in px
+     * @param {string} [options.footer] - Footer text
+     */
+    function renderMarkdown(text, options = {}) {
+      window.__renderComplete = false;
+
+      try {
+        initRenderer();
+
+        // Apply theme
+        const theme = options.theme || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+
+        // Swap highlight.js theme stylesheet
+        const hljsLink = document.getElementById("hljs-theme");
+        if (theme === "dark") {
+          hljsLink.href = "../dist/hljs-github-dark.css";
+        } else {
+          hljsLink.href = "../dist/hljs-github-light.css";
+        }
+
+        // Apply font size
+        if (options.fontSize) {
+          document.documentElement.style.fontSize = options.fontSize + "px";
+        }
+
+        // Render markdown
+        const html = md.render(text);
+        document.getElementById("content").innerHTML = html;
+
+        // Footer
+        const footerEl = document.getElementById("footer");
+        if (options.footer) {
+          footerEl.textContent = options.footer;
+          footerEl.style.display = "block";
+        } else {
+          footerEl.style.display = "none";
+        }
+
+        window.__renderComplete = true;
+      } catch (err) {
+        // Fallback: show raw text on error
+        document.getElementById("content").textContent = text;
+        window.__renderComplete = true;
+        console.error("Render error:", err);
+      }
+    }
+  </script>
+</body>
+</html>

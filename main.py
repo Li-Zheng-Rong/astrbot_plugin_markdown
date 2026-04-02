@@ -1,24 +1,192 @@
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
-from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
+"""AstrBot Markdown Renderer Plugin.
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
-class MyPlugin(Star):
-    def __init__(self, context: Context):
+Intercepts LLM text replies and renders them as high-quality images
+using VS Code's markdown-it ecosystem (markdown-it + KaTeX + highlight.js)
+powered by Playwright headless Chromium.
+"""
+
+from __future__ import annotations
+
+import os
+import time
+import uuid
+
+from astrbot.api import logger, star
+from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.message_components import Image, Plain
+
+from .markdown_detect import should_render
+from .renderer import MarkdownRenderer
+
+# Default configuration values (mirrored in _conf_schema.json)
+_DEFAULTS = {
+    "enabled": True,
+    "char_threshold": 100,
+    "score_threshold": 2,
+    "width": 800,
+    "theme": "light",
+    "font_size": 16,
+    "render_timeout": 10,
+    "footer": "Powered by AstrBot",
+    "llm_only": True,
+}
+
+
+def _get_temp_dir() -> str:
+    """Get AstrBot temp directory, creating it if needed."""
+    from astrbot.core.utils.astrbot_path import get_astrbot_temp_path
+
+    d = get_astrbot_temp_path()
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _save_temp_png(png_bytes: bytes) -> str:
+    """Save PNG bytes to a temp file and return the path."""
+    temp_dir = _get_temp_dir()
+    timestamp = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+    path = os.path.join(temp_dir, f"md_render_{timestamp}.png")
+    with open(path, "wb") as f:
+        f.write(png_bytes)
+    return path
+
+
+def _cfg_val(config, key: str):
+    """Read a config value with fallback to defaults."""
+    try:
+        val = config.get(key, _DEFAULTS.get(key))
+    except Exception:
+        val = _DEFAULTS.get(key)
+    return val if val is not None else _DEFAULTS.get(key)
+
+
+class Main(star.Star):
+    """Markdown-to-image rendering plugin for AstrBot."""
+
+    def __init__(self, context: star.Context) -> None:
         super().__init__(context)
+        self.renderer = MarkdownRenderer()
+        self._playwright_available: bool | None = None
 
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+    async def initialize(self) -> None:
+        """Check Playwright availability on startup."""
+        try:
+            import playwright  # noqa: F401
 
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
-    async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        user_name = event.get_sender_name()
-        message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
-        logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+            self._playwright_available = True
+            logger.info("Markdown plugin: Playwright is available.")
+        except ImportError:
+            self._playwright_available = False
+            logger.error(
+                "Markdown plugin: 'playwright' package not found. "
+                "Please install it with: pip install playwright && playwright install chromium"
+            )
+            return
 
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+        # Verify browser is installed (non-blocking)
+        try:
+            from playwright.async_api import async_playwright
+
+            pw = await async_playwright().start()
+            try:
+                browser = await pw.chromium.launch(headless=True)
+                await browser.close()
+                logger.info("Markdown plugin: Chromium browser verified.")
+            finally:
+                await pw.stop()
+        except Exception as e:
+            logger.warning(
+                f"Markdown plugin: Chromium browser not ready — {e}. "
+                "Run 'playwright install chromium' to install it."
+            )
+
+    @filter.on_decorating_result(priority=10)
+    async def on_decorating_result(self, event: AstrMessageEvent) -> None:
+        """Intercept replies and render markdown as images when conditions are met."""
+        config = self.context.get_config()
+
+        if not _cfg_val(config, "enabled"):
+            return
+
+        if not self._playwright_available:
+            return
+
+        result = event.get_result()
+        if result is None or not result.chain:
+            return
+
+        # Skip non-LLM results (e.g. /help commands) when llm_only is enabled
+        if _cfg_val(config, "llm_only") and not result.is_llm_result():
+            return
+
+        # Collect all leading Plain text components
+        plain_parts: list[str] = []
+        for comp in result.chain:
+            if isinstance(comp, Plain):
+                plain_parts.append(comp.text)
+            else:
+                break
+
+        if not plain_parts:
+            return
+
+        plain_text = "\n\n".join(plain_parts)
+
+        # Check rendering conditions: markdown detected + length threshold
+        char_threshold = int(_cfg_val(config, "char_threshold"))
+        score_threshold = int(_cfg_val(config, "score_threshold"))
+
+        if not should_render(
+            plain_text,
+            char_threshold=char_threshold,
+            score_threshold=score_threshold,
+        ):
+            return
+
+        # Render markdown to image
+        try:
+            width = int(_cfg_val(config, "width"))
+            theme = str(_cfg_val(config, "theme"))
+            font_size = int(_cfg_val(config, "font_size"))
+            render_timeout = int(_cfg_val(config, "render_timeout"))
+            footer = str(_cfg_val(config, "footer"))
+
+            png_bytes = await self.renderer.render(
+                plain_text,
+                width=width,
+                theme=theme,
+                font_size=font_size,
+                footer=footer,
+                timeout=render_timeout,
+            )
+
+            img_path = _save_temp_png(png_bytes)
+
+            # Replace the leading Plain components with the rendered image
+            remaining = result.chain[len(plain_parts) :]
+            result.chain = [Image.fromFileSystem(img_path)] + remaining
+
+            # Prevent built-in t2i from also converting
+            result.use_t2i_ = False
+
+            logger.debug(
+                f"Markdown plugin: rendered {len(plain_text)} chars → {img_path}"
+            )
+
+        except Exception as e:
+            logger.error(f"Markdown plugin: render failed — {e}")
+            # On failure, leave the original text untouched;
+            # built-in t2i may still convert it if enabled.
+
+    @filter.command("md_theme")
+    async def cmd_theme(self, event: AstrMessageEvent, theme: str = "") -> None:
+        """Switch markdown rendering theme (light/dark)."""
+        theme = theme.strip().lower()
+        if theme not in ("light", "dark"):
+            yield event.plain_result("Usage: /md_theme <light|dark>")
+            return
+
+        config = self.context.get_config()
+        config["theme"] = theme
+        config.save_config()
+        yield event.plain_result(f"Markdown theme set to: {theme}")

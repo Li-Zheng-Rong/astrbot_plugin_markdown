@@ -6,11 +6,16 @@ __pycache__/
 # C extensions
 *.so
 
+# Node.js (JS assets are pre-built in dist/, only needed for development)
+node_modules/
+src/
+package-lock.json
+
 # Distribution / packaging
 .Python
 build/
 develop-eggs/
-dist/
+# dist/ is NOT ignored — it contains pre-built JS/CSS assets for the plugin
 downloads/
 eggs/
 .eggs/

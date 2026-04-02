@@ -1,0 +1,48 @@
+{
+  "enabled": {
+    "description": "Enable or disable markdown-to-image rendering.",
+    "type": "bool",
+    "default": true
+  },
+  "char_threshold": {
+    "description": "Minimum text length (characters) to trigger rendering.",
+    "type": "int",
+    "default": 100
+  },
+  "score_threshold": {
+    "description": "Minimum markdown score to trigger rendering. Higher values require more markdown syntax.",
+    "type": "int",
+    "default": 2
+  },
+  "width": {
+    "description": "Image width in pixels.",
+    "type": "int",
+    "default": 800
+  },
+  "theme": {
+    "description": "Rendering theme: light or dark.",
+    "type": "string",
+    "default": "light",
+    "options": ["light", "dark"]
+  },
+  "font_size": {
+    "description": "Base font size in pixels.",
+    "type": "int",
+    "default": 16
+  },
+  "render_timeout": {
+    "description": "Maximum time (seconds) to wait for a single render.",
+    "type": "int",
+    "default": 10
+  },
+  "footer": {
+    "description": "Footer text shown at bottom of rendered images. Leave empty to hide.",
+    "type": "string",
+    "default": "Powered by AstrBot"
+  },
+  "llm_only": {
+    "description": "Only render LLM responses. When enabled, command outputs (e.g. /help) are not rendered.",
+    "type": "bool",
+    "default": true
+  }
+}

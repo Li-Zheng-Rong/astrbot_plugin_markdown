@@ -1,0 +1,17 @@
+{
+  "name": "astrbot-plugin-markdown-assets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Build assets for AstrBot markdown rendering plugin",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0",
+    "@vscode/markdown-it-katex": "^1.1.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
