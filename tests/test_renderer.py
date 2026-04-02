@@ -108,3 +108,43 @@ async def test_terminate_and_re_render(renderer):
     result2 = await renderer.render(md)
     assert result2[:4] == b"\x89PNG"
     assert renderer._initialized is True
+
+
+@pytest.mark.asyncio
+async def test_typographer_and_entities_render_as_text(renderer):
+    """Typographic substitutions and markdown escapes should render correctly."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": r"Brand (tm) &copy; \*literal\*",
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    text = await renderer._page.eval_on_selector("#content", "el => el.textContent")
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+
+    assert "Brand ™ © *literal*" in text
+    assert "<em>literal</em>" not in html
+
+
+@pytest.mark.asyncio
+async def test_raw_html_is_escaped(renderer):
+    """Raw HTML should be rendered as literal text, not injected into the page."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": '<span class="unsafe">hello</span>',
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    text = await renderer._page.eval_on_selector("#content", "el => el.textContent")
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+
+    assert '<span class="unsafe">hello</span>' in text
+    assert "&lt;span" in html

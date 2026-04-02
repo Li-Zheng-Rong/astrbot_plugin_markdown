@@ -14,15 +14,22 @@ import hljs from "highlight.js";
  */
 function createRenderer(options = {}) {
   const md = markdownit({
-    html: true,
+    // Render untrusted markdown safely: allow markdown syntax, not raw HTML.
+    html: false,
     linkify: true,
-    typographer: false,
+    typographer: true,
+    quotes: "\"\"''",
     highlight(str, lang) {
-      if (lang && hljs.getLanguage(lang)) {
+      const language = lang && hljs.getLanguage(lang) ? lang : null;
+      const codeClass = language
+        ? `hljs language-${language}`
+        : "hljs language-plaintext";
+
+      if (language) {
         try {
           return (
-            '<pre class="hljs"><code>' +
-            hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+            `<pre class="${codeClass}"><code>` +
+            hljs.highlight(str, { language, ignoreIllegals: true }).value +
             "</code></pre>"
           );
         } catch (_) {
@@ -30,7 +37,9 @@ function createRenderer(options = {}) {
         }
       }
       return (
-        '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + "</code></pre>"
+        `<pre class="${codeClass}"><code>` +
+        md.utils.escapeHtml(str) +
+        "</code></pre>"
       );
     },
     ...options,
@@ -39,6 +48,7 @@ function createRenderer(options = {}) {
   md.use(katexPlugin, {
     throwOnError: false,
     output: "htmlAndMathml",
+    trust: false,
   });
 
   return md;

@@ -1,32 +1,26 @@
 # astrbot_plugin_markdown
 
-High-quality markdown-to-image rendering plugin for [AstrBot](https://github.com/AstrBotDevs/AstrBot), powered by VS Code's markdown-it ecosystem.
+High-quality markdown-to-image rendering plugin for [AstrBot](https://github.com/AstrBotDevs/AstrBot), powered by markdown-it, [@vscode/markdown-it-katex](https://github.com/microsoft/vscode-markdown-it-katex), [highlight.js](https://highlightjs.org/), and Playwright Chromium.
 
 ## Features
 
-- **Code Highlighting** — Syntax highlighting via [highlight.js](https://highlightjs.org/) with 190+ languages
-- **Math Rendering** — LaTeX math (inline `$...$` and display `$$...$$`) via [@vscode/markdown-it-katex](https://github.com/microsoft/vscode-markdown-it-katex)
-- **Full Markdown** — Headers, tables, blockquotes, lists, bold/italic, inline code, links, images, horizontal rules
-- **Light & Dark Themes** — GitHub-inspired styling with theme switching (`/md_theme light|dark`)
-- **Smart Detection** — Only renders when markdown syntax is detected AND text exceeds a configurable length threshold
-- **Coexists with built-in t2i** — When the plugin skips a message, AstrBot's built-in text-to-image can still handle it
-- **High Performance** — Headless browser stays alive between renders; first render ~2s, subsequent renders <300ms
+- **Rich markdown rendering** - Headers, tables, lists, blockquotes, links, inline code, fenced code blocks, and horizontal rules
+- **Syntax highlighting** - highlight.js renders code blocks with GitHub-style themes
+- **Math support** - Inline and display LaTeX via KaTeX
+- **Light and dark themes** - Switch at runtime with `/md_theme light` or `/md_theme dark`
+- **Smart triggering** - Renders only when markdown score and text length exceed configured thresholds
+- **LLM-only by default** - Skips non-LLM outputs such as command/help responses unless `llm_only` is disabled
+- **Safer HTML handling** - Raw HTML is escaped instead of being injected into the preview page
+- **Typographic substitutions** - `(tm)`, `(c)`, and dash-style substitutions are enabled while plain quotes stay literal
+- **Built-in t2i friendly** - If this plugin skips rendering, AstrBot's built-in text-to-image path can still run
+- **Prebuilt frontend assets** - `dist/` is committed, so end users do not need Node.js
 
-## Architecture
+## How it works
 
-```
-LLM Response (text with markdown)
-    │
-    ▼
-┌─ on_decorating_result (priority=10) ───────────────┐
-│  MarkdownDetector: pattern scoring + length check  │
-│  MarkdownRenderer: Playwright → headless Chromium  │
-│    ├─ render.html loads bundled JS (markdown-it)   │
-│    ├─ page.evaluate() injects markdown             │
-│    └─ element.screenshot() → PNG                   │
-│  Replace chain with Image, set use_t2i_ = False    │
-└────────────────────────────────────────────────────┘
-```
+1. `@filter.on_decorating_result(priority=10)` intercepts outgoing results before AstrBot's built-in t2i step.
+2. The plugin collects leading `Plain` text components and checks `llm_only`, markdown score, and minimum length.
+3. `renderer.py` reuses a persistent Playwright page that loads `templates/render.html` plus bundled assets from `dist/`.
+4. On success, the plugin replaces the leading text with a PNG image and sets `result.use_t2i_ = False`.
 
 ## Requirements
 
@@ -37,18 +31,22 @@ LLM Response (text with markdown)
 
 ## Installation
 
-1. Install the plugin into AstrBot (the `requirements.txt` will be auto-installed):
-
-2. Install the Chromium browser for Playwright:
+1. Place this plugin under `data\plugins\astrbot_plugin_markdown`.
+2. Start AstrBot once so plugin dependencies from `requirements.txt` are installed, or install them manually:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Install the Playwright Chromium browser:
    ```bash
    playwright install chromium
    ```
+4. Restart AstrBot.
 
 If Chromium is missing, the plugin logs a warning and leaves the original text untouched.
 
 ## Configuration
 
-All settings are configurable from the AstrBot dashboard via `_conf_schema.json`:
+All settings are configurable from the AstrBot dashboard via `_conf_schema.json`.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -62,6 +60,23 @@ All settings are configurable from the AstrBot dashboard via `_conf_schema.json`
 | `footer` | string | `"Powered by AstrBot"` | Footer text shown at the bottom of rendered images; empty hides it |
 | `llm_only` | bool | `true` | Only render LLM responses; command outputs such as `/help` are skipped |
 
+## Rendering engine defaults
+
+These defaults live in `src\entry.js` and are bundled into `dist\bundle.js`.
+
+| Layer | Setting | Value | Recommendation |
+|---------|------|---------|-------------|
+| `markdown-it` | `html` | `false` | Keep disabled for untrusted LLM/user content so raw HTML is shown as text instead of being injected |
+| `markdown-it` | `linkify` | `true` | Keep enabled so plain URLs become clickable links in the rendered preview |
+| `markdown-it` | `typographer` | `true` | Enable to support `(tm)`, `(c)`, and dash substitutions in normal prose |
+| `markdown-it` | `quotes` | `"\"\"''"` | Keep straight quotes literal while still benefiting from other typographer replacements |
+| `KaTeX` | `throwOnError` | `false` | Keep disabled so malformed math degrades gracefully instead of aborting the whole render |
+| `KaTeX` | `output` | `"htmlAndMathml"` | Keep enabled for better accessibility and copy/paste behavior |
+| `KaTeX` | `trust` | `false` | Keep disabled so unsafe HTML/URL-style KaTeX commands are not executed |
+| `highlight.js` | `ignoreIllegals` | `true` | Keep enabled so partially invalid code fences do not break rendering |
+| `highlight.js` | auto-detect | disabled | Keep disabled for deterministic output and lower render latency |
+| `highlight.js` | language CSS class | enabled | Keep enabled so theme/style overrides can target the rendered code language when needed |
+
 ## Command
 
 | Command | Description |
@@ -70,9 +85,9 @@ All settings are configurable from the AstrBot dashboard via `_conf_schema.json`
 
 ## Development
 
-### Rebuilding JS Assets
+### Rebuilding frontend assets
 
-The `dist/` directory contains pre-built JS/CSS assets. To rebuild after modifying JS dependencies:
+The browser-side source lives in `src\`. Rebuild committed assets in `dist\` with:
 
 ```bash
 cd data/plugins/astrbot_plugin_markdown
@@ -82,7 +97,7 @@ npm run build
 
 `package-lock.json` is committed for reproducible builds. Node.js is only needed when rebuilding assets.
 
-### Running Test
+### Running tests
 
 ```bash
 cd <AstrBot root>
