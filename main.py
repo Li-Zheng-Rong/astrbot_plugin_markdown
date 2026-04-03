@@ -86,11 +86,24 @@ def _cfg_val(config, key: str):
 class Main(star.Star):
     """Markdown-to-image rendering plugin for AstrBot."""
 
-    def __init__(self, context: star.Context) -> None:
-        super().__init__(context)
+    def __init__(self, context: star.Context, config=None) -> None:
+        super().__init__(context, config)
+        self.config = config
         self.renderer = MarkdownRenderer()
         self._playwright_available: bool | None = None
         self._security_warned: set[str] = set()
+
+    def _get_plugin_config(self):
+        """Return the plugin config injected by StarManager.
+
+        AstrBot passes plugin settings as the optional ``config`` constructor
+        argument. ``context.get_config()`` returns the core AstrBot config, not
+        the plugin-specific config file, so use the injected config when
+        available.
+        """
+        if self.config is not None:
+            return self.config
+        return self.context.get_config()
 
     async def initialize(self) -> None:
         """Check Playwright availability on startup."""
@@ -127,7 +140,7 @@ class Main(star.Star):
     @filter.on_decorating_result(priority=10)
     async def on_decorating_result(self, event: AstrMessageEvent) -> None:
         """Intercept replies and render markdown as images when conditions are met."""
-        config = self.context.get_config()
+        config = self._get_plugin_config()
 
         if not _cfg_val(config, "enabled"):
             return
@@ -253,7 +266,7 @@ class Main(star.Star):
             yield event.plain_result("Usage: /md_theme <light|dark>")
             return
 
-        config = self.context.get_config()
+        config = self._get_plugin_config()
         config["theme"] = theme
         config.save_config()
         yield event.plain_result(f"Markdown theme set to: {theme}")
@@ -330,7 +343,7 @@ class Main(star.Star):
             )
             return
 
-        config = self.context.get_config()
+        config = self._get_plugin_config()
         try:
             width = int(_cfg_val(config, "width"))
             theme = str(_cfg_val(config, "theme"))
