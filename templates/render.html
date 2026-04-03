@@ -68,9 +68,9 @@
           document.documentElement.style.fontSize = options.fontSize + "px";
         }
 
-        // Render markdown
+        // Render markdown and sanitize to prevent XSS
         const html = md.render(text);
-        document.getElementById("content").innerHTML = html;
+        document.getElementById("content").innerHTML = MarkdownBundle.sanitizeHtml(html);
 
         // Footer
         const footerEl = document.getElementById("footer");

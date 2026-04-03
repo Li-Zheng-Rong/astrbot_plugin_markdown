@@ -10,6 +10,7 @@ import supPlugin from "markdown-it-sup";
 import markPlugin from "markdown-it-mark";
 import footnotePlugin from "markdown-it-footnote";
 import hljs from "highlight.js";
+import DOMPurify from "dompurify";
 
 /**
  * Create a configured markdown-it instance.
@@ -82,5 +83,21 @@ function createRenderer(options = {}) {
   return md;
 }
 
+/**
+ * Sanitize HTML produced by markdown-it to prevent XSS.
+ *
+ * Allows standard HTML formatting and MathML (required by KaTeX)
+ * while stripping scripts, event handlers, and dangerous URIs.
+ *
+ * @param {string} html - Raw HTML string from md.render()
+ * @returns {string} Sanitized HTML safe for innerHTML assignment
+ */
+function sanitizeHtml(html) {
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true, mathMl: true },
+    FORBID_TAGS: ["form", "input", "textarea", "select", "button"],
+  });
+}
+
 // Export for global access
-export { createRenderer, hljs };
+export { createRenderer, hljs, sanitizeHtml };

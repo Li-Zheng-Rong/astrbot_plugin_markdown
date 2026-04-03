@@ -1,88 +1,88 @@
 {
   "enabled": {
-    "description": "Enable or disable markdown-to-image rendering.",
+    "description": "启用或禁用 Markdown 转图片渲染",
     "type": "bool",
     "default": true
   },
   "char_threshold": {
-    "description": "Minimum text length (characters) to trigger rendering.",
+    "description": "触发渲染的最小文本长度 (字符数)",
     "type": "int",
     "default": 100
   },
   "score_threshold": {
-    "description": "Minimum markdown score to trigger rendering. Higher values require more markdown syntax.",
+    "description": "触发渲染的最低 Markdown 评分，值越高要求越多语法",
     "type": "int",
     "default": 2
   },
   "width": {
-    "description": "Image width in pixels.",
+    "description": "渲染图片宽度 (像素)",
     "type": "int",
     "default": 800
   },
   "theme": {
-    "description": "Rendering theme: light or dark.",
+    "description": "渲染主题: light 或 dark",
     "type": "string",
     "default": "light",
     "options": ["light", "dark"]
   },
   "font_size": {
-    "description": "Base font size in pixels.",
+    "description": "基础字体大小 (像素)",
     "type": "int",
     "default": 16
   },
   "render_timeout": {
-    "description": "Maximum time (seconds) to wait for a single render.",
+    "description": "单次渲染最大等待时间 (秒)",
     "type": "int",
     "default": 10
   },
   "footer": {
-    "description": "Footer text shown at bottom of rendered images. Leave empty to hide.",
+    "description": "图片底部页脚文字，留空则隐藏",
     "type": "string",
     "default": "Powered by AstrBot"
   },
   "llm_only": {
-    "description": "Only render LLM responses. When enabled, command outputs (e.g. /help) are not rendered.",
+    "description": "仅渲染 LLM 回复，跳过指令输出 (如 /help)",
     "type": "bool",
     "default": true
   },
   "md_html": {
-    "description": "⚠️ SECURITY WARNING: Allow raw HTML tags in markdown. When enabled, HTML embedded in markdown is rendered as-is, which may allow script injection from untrusted sources. Keep disabled unless all input is trusted.",
+    "description": "允许 Markdown 中的原始 HTML 标签 (已由 DOMPurify 消毒)",
     "type": "bool",
     "default": false
   },
   "md_linkify": {
-    "description": "Automatically convert plain-text URLs into clickable links.",
+    "description": "自动将纯文本 URL 转为可点击链接",
     "type": "bool",
     "default": true
   },
   "md_typographer": {
-    "description": "Enable typographic replacements: (tm) → ™, (c) → ©, -- → –, --- → —.",
+    "description": "排版替换: (tm)→™, (c)→©, --→–, ---→—",
     "type": "bool",
     "default": true
   },
   "md_quotes": {
-    "description": "Quote replacement characters used by the typographer (4-char string: open-double, close-double, open-single, close-single). Default keeps ASCII straight quotes.",
+    "description": "排版引号替换字符 (4字符: 双开、双闭、单开、单闭)",
     "type": "string",
     "default": "\"\"''"
   },
   "katex_throw_on_error": {
-    "description": "Throw an exception on invalid LaTeX instead of rendering an error message inline.",
+    "description": "LaTeX 语法错误时抛出异常而非内联显示错误",
     "type": "bool",
     "default": false
   },
   "katex_output": {
-    "description": "KaTeX output format.",
+    "description": "KaTeX 输出格式",
     "type": "string",
     "default": "htmlAndMathml",
     "options": ["html", "mathml", "htmlAndMathml"]
   },
   "katex_trust": {
-    "description": "⚠️ SECURITY WARNING: Allow KaTeX commands that can generate arbitrary HTML (e.g. \\href, \\url). This may enable script injection from untrusted sources. Keep disabled unless all input is trusted.",
+    "description": "允许 KaTeX 扩展命令如 \\href、\\url (已由 DOMPurify 消毒)",
     "type": "bool",
     "default": false
   },
   "hljs_ignore_illegals": {
-    "description": "Continue highlighting even when the code contains syntax errors for the declared language.",
+    "description": "代码含语法错误时仍继续高亮",
     "type": "bool",
     "default": true
   }

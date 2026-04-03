@@ -228,16 +228,15 @@ class Main(star.Star):
         katex_trust = bool(_cfg_val(config, "katex_trust"))
 
         if md_html and "md_html" not in self._security_warned:
-            logger.warning(
+            logger.info(
                 "Markdown plugin: md_html is enabled — raw HTML in "
-                "markdown will be rendered. Ensure all input is trusted."
+                "markdown will be rendered. Output is sanitized by DOMPurify."
             )
             self._security_warned.add("md_html")
         if katex_trust and "katex_trust" not in self._security_warned:
-            logger.warning(
+            logger.info(
                 "Markdown plugin: katex_trust is enabled — KaTeX can "
-                "execute potentially unsafe commands. Ensure all input "
-                "is trusted."
+                "use extended commands. Output is sanitized by DOMPurify."
             )
             self._security_warned.add("katex_trust")
 

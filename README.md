@@ -9,7 +9,11 @@ The rendering pipeline is built on the same libraries used by Visual Studio Code
 [markdown-it](https://github.com/markdown-it/markdown-it) for markdown parsing,
 [@vscode/markdown-it-katex](https://github.com/microsoft/vscode-markdown-it-katex)
 for LaTeX math, and [highlight.js](https://highlightjs.org/) for syntax
-highlighting.
+highlighting. All rendered HTML is sanitized by
+[DOMPurify](https://github.com/cure53/DOMPurify) before injection to prevent
+XSS attacks.
+
+[中文文档](README_zh.md)
 
 ## Features
 
@@ -26,6 +30,8 @@ highlighting.
   plugin settings and applied at runtime without restart.
 - Smart triggering based on markdown pattern scoring and minimum text length.
 - Coexistence with AstrBot's built-in text-to-image pipeline.
+- DOMPurify HTML sanitization — all rendered output is sanitized before
+  injection, making `md_html` and `katex_trust` safe to enable.
 
 ## Requirements
 
@@ -67,6 +73,7 @@ on_decorating_result (priority 10)
 │   ├─ Load templates/render.html with bundled JS/CSS from dist/
 │   ├─ page.evaluate("renderMarkdown(text, options)")
 │   │   └─ options includes theme, fontSize, footer, and engine config
+│   ├─ DOMPurify sanitizes rendered HTML before DOM injection
 │   ├─ Screenshot #content element → PNG bytes
 │   └─ Reuse browser page across renders; reload every 200 renders
 │
@@ -101,13 +108,13 @@ changes take effect immediately without restarting the plugin.
 
 | Key                     | Type   | Default            | Description                                                                                                |
 |-------------------------|--------|--------------------|------------------------------------------------------------------------------------------------------------|
-| `md_html`               | bool   | `false`            | **⚠️ Security risk.** Allow raw HTML tags in markdown. Enable only if all input sources are trusted.         |
+| `md_html`               | bool   | `false`            | Allow raw HTML tags in markdown. Output is sanitized by DOMPurify.                                         |
 | `md_linkify`            | bool   | `true`             | Automatically convert plain-text URLs into clickable links.                                                |
 | `md_typographer`        | bool   | `true`             | Typographic replacements: `(tm)` → ™, `(c)` → ©, `--` → –, `---` → —.                                    |
 | `md_quotes`             | string | `"\"\"''"`         | Quote characters for the typographer (4 chars). Default preserves ASCII straight quotes.                   |
 | `katex_throw_on_error`  | bool   | `false`            | Throw on invalid LaTeX instead of rendering an error message inline.                                       |
 | `katex_output`          | string | `"htmlAndMathml"`  | KaTeX output format: `html`, `mathml`, or `htmlAndMathml`.                                                 |
-| `katex_trust`           | bool   | `false`            | **⚠️ Security risk.** Allow KaTeX commands that generate arbitrary HTML. Enable only if all input is trusted. |
+| `katex_trust`           | bool   | `false`            | Allow KaTeX commands that generate extended HTML (e.g. `\href`, `\url`). Output is sanitized by DOMPurify.   |
 | `hljs_ignore_illegals`  | bool   | `true`             | Continue highlighting even when code contains syntax errors for the declared language.                      |
 
 ## Commands
@@ -117,19 +124,20 @@ changes take effect immediately without restarting the plugin.
 | `/md_theme <light\|dark>` | Persistently change the rendering theme |
 | `/md_test`               | Render a test document covering all supported syntax |
 
-## Security considerations
+## Security
 
-Two settings carry explicit security warnings:
+All HTML rendered by markdown-it is passed through
+[DOMPurify](https://github.com/cure53/DOMPurify) before being injected into the
+page DOM. DOMPurify strips `<script>` tags, event-handler attributes
+(`onerror`, `onload`, etc.), `javascript:` URIs, and other dangerous markup
+while preserving safe HTML formatting and MathML (required by KaTeX).
 
-- **`md_html`** — When set to `true`, raw HTML embedded in markdown is rendered
-  as-is. This enables script injection if the markdown source is untrusted.
-  The default (`false`) escapes all HTML tags.
-- **`katex_trust`** — When set to `true`, KaTeX allows commands such as
-  `\href{javascript:...}{...}` that can produce arbitrary HTML. The default
-  (`false`) blocks these commands.
+This means `md_html` and `katex_trust` can be safely enabled — even if the
+LLM output contains malicious HTML, it will be sanitized before rendering.
 
-Both settings default to their safe values. The plugin logs a one-time warning
-when either is enabled.
+The Chromium browser is launched with `--no-sandbox` for Docker compatibility.
+DOMPurify serves as the defense-in-depth layer that prevents any injected
+content from executing in the browser context.
 
 ## Development
 
@@ -148,7 +156,7 @@ astrbot_plugin_markdown/
 ├── src/
 │   └── entry.js            JS entry point (esbuild input)
 ├── dist/                   Pre-built browser assets (committed)
-│   ├── bundle.js           markdown-it + KaTeX + highlight.js IIFE bundle
+│   ├── bundle.js           markdown-it + KaTeX + highlight.js + DOMPurify IIFE bundle
 │   ├── style.css           Custom markdown styling
 │   ├── katex.min.css       KaTeX stylesheet
 │   ├── fonts/              KaTeX font files
