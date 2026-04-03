@@ -48,7 +48,7 @@
   "md_html": {
     "description": "允许 Markdown 中的原始 HTML 标签 (已由 DOMPurify 消毒)",
     "type": "bool",
-    "default": false
+    "default": true
   },
   "md_linkify": {
     "description": "自动将纯文本 URL 转为可点击链接",
@@ -79,7 +79,7 @@
   "katex_trust": {
     "description": "允许 KaTeX 扩展命令如 \\href、\\url (已由 DOMPurify 消毒)",
     "type": "bool",
-    "default": false
+    "default": true
   },
   "hljs_ignore_illegals": {
     "description": "代码含语法错误时仍继续高亮",
