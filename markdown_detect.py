@@ -55,12 +55,18 @@ def should_render(
     *,
     char_threshold: int = 100,
     score_threshold: int = 2,
+    force_render_char_threshold: int = 500,
 ) -> bool:
     """Decide whether the text should be rendered as a markdown image.
 
-    Returns True if the text contains enough markdown syntax (score >= score_threshold)
-    AND is long enough (len >= char_threshold).
+    Returns True if:
+    - Text length >= force_render_char_threshold (force render regardless of
+      markdown content), OR
+    - Text contains enough markdown syntax (score >= score_threshold) AND is
+      long enough (len >= char_threshold).
     """
+    if force_render_char_threshold > 0 and len(text) >= force_render_char_threshold:
+        return True
     if len(text) < char_threshold:
         return False
     return compute_markdown_score(text) >= score_threshold

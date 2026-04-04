@@ -14,6 +14,11 @@
     "type": "int",
     "default": 2
   },
+  "force_render_char_threshold": {
+    "description": "超过此字符数时，无论是否包含 Markdown 语法都强制渲染为图片",
+    "type": "int",
+    "default": 500
+  },
   "width": {
     "description": "渲染图片宽度 (像素)",
     "type": "int",

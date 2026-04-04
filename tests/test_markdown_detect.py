@@ -97,9 +97,9 @@ class TestShouldRender:
         assert should_render("# Hi\n**bold**", char_threshold=100) is False
 
     def test_long_plain_text_does_not_render(self):
-        # Long but no markdown
+        # Long but no markdown; disable force-render to test score-based logic only
         text = "This is a very long plain text. " * 20
-        assert should_render(text, char_threshold=100) is False
+        assert should_render(text, char_threshold=100, force_render_char_threshold=0) is False
 
     def test_long_markdown_renders(self):
         text = (
@@ -136,3 +136,45 @@ class TestShouldRender:
         text = base + padding
         assert len(text) == 99
         assert should_render(text, char_threshold=100) is False
+
+    def test_force_render_long_plain_text(self):
+        text = "plain text without any markdown syntax. " * 50  # > 800 chars
+        assert should_render(text, force_render_char_threshold=800) is True
+
+    def test_force_render_respects_custom_threshold(self):
+        text = "x" * 200
+        assert should_render(text, char_threshold=500, force_render_char_threshold=200) is True
+        assert should_render(text, char_threshold=500, force_render_char_threshold=201) is False
+
+    def test_force_render_zero_disables(self):
+        text = "x" * 5000
+        # force_render_char_threshold=0 should NOT force-render everything
+        assert should_render(text, char_threshold=10000, force_render_char_threshold=0) is False
+
+    def test_force_render_skips_score_computation(self):
+        # Even with no markdown at all, force threshold triggers render
+        text = "a" * 1000
+        assert compute_markdown_score(text) == 0
+        assert should_render(text, char_threshold=100, score_threshold=5, force_render_char_threshold=800) is True
+
+    def test_force_render_falls_back_to_score_logic(self):
+        # Below force threshold but above char threshold: should use score logic
+        text = "# Title\n\n" + "x" * 200  # has markdown, ~210 chars
+        assert should_render(
+            text,
+            char_threshold=100,
+            score_threshold=2,
+            force_render_char_threshold=500,
+        ) is True
+        # Same length, no markdown: should not render
+        text2 = "x" * 210
+        assert should_render(
+            text2,
+            char_threshold=100,
+            score_threshold=2,
+            force_render_char_threshold=500,
+        ) is False
+            char_threshold=100,
+            score_threshold=2,
+            force_render_char_threshold=500,
+        ) is False

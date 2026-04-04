@@ -23,6 +23,7 @@ _DEFAULTS = {
     "enabled": True,
     "char_threshold": 100,
     "score_threshold": 2,
+    "force_render_char_threshold": 500,
     "width": 800,
     "theme": "light",
     "font_size": 16,
@@ -172,11 +173,13 @@ class Main(star.Star):
         # Check rendering conditions: markdown detected + length threshold
         char_threshold = int(_cfg_val(config, "char_threshold"))
         score_threshold = int(_cfg_val(config, "score_threshold"))
+        force_render_char_threshold = int(_cfg_val(config, "force_render_char_threshold"))
 
         if not should_render(
             plain_text,
             char_threshold=char_threshold,
             score_threshold=score_threshold,
+            force_render_char_threshold=force_render_char_threshold,
         ):
             return
 
