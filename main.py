@@ -173,7 +173,9 @@ class Main(star.Star):
         # Check rendering conditions: markdown detected + length threshold
         char_threshold = int(_cfg_val(config, "char_threshold"))
         score_threshold = int(_cfg_val(config, "score_threshold"))
-        force_render_char_threshold = int(_cfg_val(config, "force_render_char_threshold"))
+        force_render_char_threshold = int(
+            _cfg_val(config, "force_render_char_threshold")
+        )
 
         if not should_render(
             plain_text,

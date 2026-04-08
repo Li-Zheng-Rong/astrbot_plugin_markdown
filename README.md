@@ -23,8 +23,8 @@ XSS attacks.
   footnotes (`[^1]`).
 - Full CommonMark support: headings, tables, lists, blockquotes, links, images,
   horizontal rules.
-- Light and dark themes with GitHub-inspired styling and GitHub monospace font
-  stack for code blocks.
+- Light and dark themes with GitHub-inspired styling and GitHub-based font
+  stacks, extended with Noto/CJK fallbacks for broader system coverage.
 - Typographic substitutions: `(tm)` → ™, `(c)` → ©, `--` → –, `---` → —.
 - All rendering-engine options (markdown-it, KaTeX, highlight.js) exposed as
   plugin settings and applied at runtime without restart.
