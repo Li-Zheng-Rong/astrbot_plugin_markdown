@@ -62,6 +62,13 @@ class MarkdownRenderer:
             )
             self._page = await self._browser.new_page()
             await self._page.set_viewport_size({"width": width, "height": 600})
+            self._page.on(
+                "requestfailed",
+                lambda req: logger.warning(
+                    "Markdown renderer: request failed: "
+                    f"{req.url} ({req.failure.error_text if req.failure else 'unknown'})"
+                ),
+            )
 
             template_url = _RENDER_HTML.resolve().as_uri()
             await self._page.goto(template_url, wait_until="domcontentloaded")
@@ -190,6 +197,17 @@ class MarkdownRenderer:
                 await self._page.wait_for_function(
                     "window.__renderComplete === true",
                     timeout=timeout * 1000,
+                )
+                await self._page.wait_for_function(
+                    "document.fonts && document.fonts.status === 'loaded'",
+                    timeout=timeout * 1000,
+                )
+                await self._page.evaluate(
+                    """() => new Promise((resolve) => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(resolve);
+                        });
+                    })"""
                 )
 
                 elapsed = time.monotonic() - start

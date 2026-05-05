@@ -45,7 +45,19 @@
      * @param {string} [options.footer] - Footer text
      * @param {object} [options.engine] - Engine options for createRenderer
      */
-    function renderMarkdown(text, options = {}) {
+    async function waitForStableFonts() {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+    }
+
+    async function renderMarkdown(text, options = {}) {
       window.__renderComplete = false;
 
       try {
@@ -81,6 +93,7 @@
           footerEl.style.display = "none";
         }
 
+        await waitForStableFonts();
         window.__renderComplete = true;
       } catch (err) {
         // Fallback: show raw text on error
