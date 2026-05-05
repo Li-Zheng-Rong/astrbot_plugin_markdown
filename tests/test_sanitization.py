@@ -308,6 +308,32 @@ async def test_katex_sqrt_svg_preserved(renderer):
     assert "<path" in html.lower()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "formula",
+    [
+        r"$$\sqrt[3]{x + 1}$$",
+        r"$$\widehat{abcdef}$$",
+        r"$$\widetilde{abcdef}$$",
+        r"$$\overrightarrow{AB}$$",
+        r"$$\overleftrightarrow{AB}$$",
+        r"$$A \xrightarrow{f} B$$",
+        r"$$\overbrace{a+b+c}^{n}$$",
+        r"$$\underbrace{a+b+c}_{n}$$",
+    ],
+)
+async def test_katex_stretchy_svg_preserved(renderer, formula):
+    """KaTeX stretchy SVG constructs must survive sanitization."""
+    html = await _render_and_get_html(
+        renderer,
+        formula,
+        engine=_ENGINE_ALL_ON,
+    )
+    assert "katex" in html.lower()
+    assert "<svg" in html.lower()
+    assert "<path" in html.lower()
+
+
 # ── highlight.js output preserved ───────────────────────────────────
 
 
