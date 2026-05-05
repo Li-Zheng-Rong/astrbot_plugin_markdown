@@ -28,6 +28,21 @@ CHROMIUM_ARGS = [
     "--allow-file-access-from-files",
 ]
 
+
+def _request_failure_text(request) -> str:
+    """Return a stable failure description across Playwright versions."""
+    failure = getattr(request, "failure", None)
+    if isinstance(failure, dict):
+        return str(failure.get("errorText") or failure.get("error_text") or "unknown")
+    if hasattr(failure, "error_text"):
+        return str(failure.error_text)
+    if hasattr(failure, "errorText"):
+        return str(failure.errorText)
+    if failure is None:
+        return "unknown"
+    return str(failure)
+
+
 _WAIT_FOR_STABLE_LAYOUT_SCRIPT = """(selector) => new Promise((resolve, reject) => {
     const element = document.querySelector(selector);
     if (!element) {
@@ -108,7 +123,7 @@ class MarkdownRenderer:
                 "requestfailed",
                 lambda req: logger.warning(
                     "Markdown renderer: request failed: "
-                    f"{req.url} ({req.failure.error_text if req.failure else 'unknown'})"
+                    f"{req.url} ({_request_failure_text(req)})"
                 ),
             )
 

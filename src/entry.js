@@ -94,8 +94,22 @@ function createRenderer(options = {}) {
  */
 function sanitizeHtml(html) {
   return DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true, mathMl: true },
-    FORBID_TAGS: ["form", "input", "textarea", "select", "button"],
+    USE_PROFILES: { html: true, mathMl: true, svg: true, svgFilters: false },
+    FORBID_TAGS: [
+      "form",
+      "input",
+      "textarea",
+      "select",
+      "button",
+      "style",
+      "iframe",
+      "object",
+      "embed",
+      "link",
+      "base",
+      "meta",
+      "foreignObject",
+    ],
   });
 }
 
