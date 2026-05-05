@@ -16,7 +16,7 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image, Plain
 
 from .markdown_detect import should_render
-from .renderer import MarkdownRenderer
+from .renderer import CHROMIUM_ARGS, MarkdownRenderer
 
 # Default configuration values (mirrored in _conf_schema.json)
 _DEFAULTS = {
@@ -127,7 +127,7 @@ class Main(star.Star):
 
             pw = await async_playwright().start()
             try:
-                browser = await pw.chromium.launch(headless=True)
+                browser = await pw.chromium.launch(headless=True, args=CHROMIUM_ARGS)
                 await browser.close()
                 logger.info("Markdown plugin: Chromium browser verified.")
             finally:

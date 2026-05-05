@@ -19,6 +19,53 @@ _RENDER_HTML = _TEMPLATES_DIR / "render.html"
 # How many renders before we force-reload the page to avoid memory leaks
 _PAGE_RELOAD_INTERVAL = 200
 
+CHROMIUM_ARGS = [
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--disable-features=Translate,BackForwardCache",
+    "--font-render-hinting=none",
+    "--allow-file-access-from-files",
+]
+
+_WAIT_FOR_STABLE_LAYOUT_SCRIPT = """(selector) => new Promise((resolve, reject) => {
+    const element = document.querySelector(selector);
+    if (!element) {
+        reject(new Error(`Could not find ${selector} element`));
+        return;
+    }
+
+    let stableFrames = 0;
+    let previous = "";
+    const maxFrames = 30;
+    let frames = 0;
+
+    const tick = () => {
+        const rect = element.getBoundingClientRect();
+        const current = [
+            Math.round(rect.x * 100),
+            Math.round(rect.y * 100),
+            Math.round(rect.width * 100),
+            Math.round(rect.height * 100),
+            Math.round(element.scrollWidth * 100),
+            Math.round(element.scrollHeight * 100),
+        ].join(",");
+
+        stableFrames = current === previous ? stableFrames + 1 : 0;
+        previous = current;
+        frames += 1;
+
+        if (stableFrames >= 3 || frames >= maxFrames) {
+            resolve();
+            return;
+        }
+
+        requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+})"""
+
 
 class MarkdownRenderer:
     """Renders markdown text to PNG images via headless Chromium."""
@@ -48,17 +95,12 @@ class MarkdownRenderer:
             self._browser = await self._playwright.chromium.launch(
                 headless=True,
                 # --no-sandbox is required in Docker / rootless containers
-                # where the user namespace sandbox is unavailable.  The
+                # where the user namespace sandbox is unavailable. The
                 # security surface is limited because md_html defaults to
                 # false (raw HTML stripped) and katex_trust defaults to
                 # false, so user-controlled content cannot inject
                 # executable markup into the page.
-                args=[
-                    "--no-sandbox",
-                    "--disable-gpu",
-                    "--disable-dev-shm-usage",
-                    "--font-render-hinting=none",
-                ],
+                args=CHROMIUM_ARGS,
             )
             self._page = await self._browser.new_page()
             await self._page.set_viewport_size({"width": width, "height": 600})
@@ -71,7 +113,7 @@ class MarkdownRenderer:
             )
 
             template_url = _RENDER_HTML.resolve().as_uri()
-            await self._page.goto(template_url, wait_until="domcontentloaded")
+            await self._page.goto(template_url, wait_until="load")
 
             self._render_count = 0
             self._initialized = True
@@ -102,6 +144,34 @@ class MarkdownRenderer:
         self._page = None
         self._browser = None
         self._playwright = None
+
+    async def _wait_for_render_stable(self, timeout: int, selector: str) -> None:
+        """Wait until fonts are loaded and the screenshot target stops resizing."""
+        await self._page.wait_for_function(
+            "window.__renderComplete === true",
+            timeout=timeout * 1000,
+        )
+        await self._page.wait_for_function(
+            "document.fonts && document.fonts.status === 'loaded'",
+            timeout=timeout * 1000,
+        )
+        await self._page.evaluate(_WAIT_FOR_STABLE_LAYOUT_SCRIPT, selector)
+
+        font_state = await self._page.evaluate(
+            """() => ({
+                status: document.fonts ? document.fonts.status : "unsupported",
+                loadedFamilies: document.fonts
+                    ? Array.from(document.fonts)
+                        .filter((font) => font.status === "loaded")
+                        .map((font) => font.family)
+                    : []
+            })"""
+        )
+        logger.debug(
+            "Markdown renderer: fonts ready "
+            f"status={font_state['status']} "
+            f"loaded={','.join(font_state['loadedFamilies'])}"
+        )
 
     async def render(
         self,
@@ -166,7 +236,7 @@ class MarkdownRenderer:
                 # Periodically reload to avoid memory leaks
                 if self._render_count >= _PAGE_RELOAD_INTERVAL:
                     template_url = _RENDER_HTML.resolve().as_uri()
-                    await self._page.goto(template_url, wait_until="domcontentloaded")
+                    await self._page.goto(template_url, wait_until="load")
                     self._render_count = 0
 
                 # Resize viewport if width changed
@@ -192,23 +262,8 @@ class MarkdownRenderer:
                     "(args) => renderMarkdown(args.text, args.options)",
                     {"text": markdown_text, "options": options},
                 )
-
-                # Wait for rendering to complete
-                await self._page.wait_for_function(
-                    "window.__renderComplete === true",
-                    timeout=timeout * 1000,
-                )
-                await self._page.wait_for_function(
-                    "document.fonts && document.fonts.status === 'loaded'",
-                    timeout=timeout * 1000,
-                )
-                await self._page.evaluate(
-                    """() => new Promise((resolve) => {
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(resolve);
-                        });
-                    })"""
-                )
+                screenshot_selector = "body" if footer else "#content"
+                await self._wait_for_render_stable(timeout, screenshot_selector)
 
                 elapsed = time.monotonic() - start
                 if elapsed > 3:
@@ -216,17 +271,9 @@ class MarkdownRenderer:
                         f"Markdown render took {elapsed:.1f}s (threshold: 3s)"
                     )
 
-                # Screenshot the content element
-                content_el = await self._page.query_selector("#content")
-                if not content_el:
-                    raise RuntimeError("Could not find #content element")
-
-                # Include footer if present
-                if footer:
-                    # Screenshot the full body to include footer
-                    screenshot_el = await self._page.query_selector("body")
-                else:
-                    screenshot_el = content_el
+                screenshot_el = await self._page.query_selector(screenshot_selector)
+                if not screenshot_el:
+                    raise RuntimeError(f"Could not find {screenshot_selector} element")
 
                 png_bytes = await screenshot_el.screenshot(type="png")
                 self._render_count += 1
