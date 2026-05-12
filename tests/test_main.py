@@ -110,6 +110,55 @@ async def test_on_decorating_result_uses_plugin_footer(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_katex_escaped_delimiters_config_controls_detection_and_engine(
+    monkeypatch,
+):
+    """The escaped delimiter switch should affect detection and rendering config."""
+    plugin_config = DummyConfig(
+        {
+            "enabled": True,
+            "llm_only": True,
+            "char_threshold": 0,
+            "score_threshold": 0,
+            "force_render_char_threshold": 0,
+            "katex_escaped_delimiters": False,
+        }
+    )
+    plugin = Main(DummyContext(DummyConfig({})), config=plugin_config)
+    plugin._playwright_available = True
+
+    captured = {}
+
+    async def fake_render(*args, **kwargs):
+        captured["engine"] = kwargs["engine"]
+        return b"\x89PNGtest"
+
+    def fake_should_render(*args, **kwargs):
+        captured["should_render_kwargs"] = kwargs
+        return True
+
+    plugin.renderer = SimpleNamespace(render=fake_render)
+
+    monkeypatch.setattr(
+        "data.plugins.astrbot_plugin_markdown.main.should_render",
+        fake_should_render,
+    )
+    monkeypatch.setattr(
+        "data.plugins.astrbot_plugin_markdown.main._save_temp_png",
+        lambda png_bytes: "D:\\fake\\render.png",
+    )
+
+    event = DummyEvent(DummyResult([Plain(r"Inline \(E = mc^2\)")]))
+
+    await plugin.on_decorating_result(event)
+
+    assert (
+        captured["should_render_kwargs"]["enable_escaped_math_delimiters"] is False
+    )
+    assert captured["engine"]["katex"]["enableEscapedDelimiters"] is False
+
+
+@pytest.mark.asyncio
 async def test_md_theme_saves_plugin_config_not_core_config():
     """The theme command should persist changes to plugin config."""
     core_config = DummyConfig({"theme": "light"})

@@ -86,6 +86,11 @@
     "type": "bool",
     "default": true
   },
+  "katex_escaped_delimiters": {
+    "description": "支持 LaTeX 分隔符 \\(...\\) 和 \\[...\\]",
+    "type": "bool",
+    "default": true
+  },
   "hljs_ignore_illegals": {
     "description": "代码含语法错误时仍继续高亮",
     "type": "bool",

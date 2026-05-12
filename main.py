@@ -39,6 +39,7 @@ _DEFAULTS = {
     "katex_throw_on_error": False,
     "katex_output": "htmlAndMathml",
     "katex_trust": False,
+    "katex_escaped_delimiters": True,
     # Engine: highlight.js
     "hljs_ignore_illegals": True,
 }
@@ -176,12 +177,14 @@ class Main(star.Star):
         force_render_char_threshold = int(
             _cfg_val(config, "force_render_char_threshold")
         )
+        katex_escaped_delimiters = bool(_cfg_val(config, "katex_escaped_delimiters"))
 
         if not should_render(
             plain_text,
             char_threshold=char_threshold,
             score_threshold=score_threshold,
             force_render_char_threshold=force_render_char_threshold,
+            enable_escaped_math_delimiters=katex_escaped_delimiters,
         ):
             return
 
@@ -256,6 +259,9 @@ class Main(star.Star):
                 "throwOnError": bool(_cfg_val(config, "katex_throw_on_error")),
                 "output": str(_cfg_val(config, "katex_output")),
                 "trust": katex_trust,
+                "enableEscapedDelimiters": bool(
+                    _cfg_val(config, "katex_escaped_delimiters")
+                ),
             },
             "highlight": {
                 "ignoreIllegals": bool(_cfg_val(config, "hljs_ignore_illegals")),

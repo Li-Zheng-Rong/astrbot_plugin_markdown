@@ -16,7 +16,7 @@
 ## 功能
 
 - 围栏代码块，支持 190+ 种语言的语法高亮
-- 行内和块级 LaTeX 数学公式（`$...$` 和 `$$...$$`）
+- 行内和块级 LaTeX 数学公式（`$...$`、`$$...$$`、`\(...\)` 和 `\[...\]`）
 - 上标（`^text^`）、下标（`~text~`）、高亮（`==text==`）和脚注（`[^1]`）
 - 完整 CommonMark 支持：标题、表格、列表、引用、链接、图片、分隔线
 - 明亮 / 暗色主题，GitHub 风格样式，基于 GitHub 字体栈并补充
@@ -108,6 +108,7 @@ on_decorating_result (priority 10)
 | `katex_throw_on_error`   | bool   | `false`            | LaTeX 语法错误时抛出异常而非内联显示错误                                 |
 | `katex_output`           | string | `"htmlAndMathml"`  | KaTeX 输出格式：`html`、`mathml` 或 `htmlAndMathml`                |
 | `katex_trust`            | bool   | `false`            | 允许 KaTeX 扩展命令（如 `\href`、`\url`），输出已由 DOMPurify 消毒       |
+| `katex_escaped_delimiters` | bool | `true`             | 启用 LaTeX 数学分隔符 `\(...\)` 和 `\[...\]`                        |
 | `hljs_ignore_illegals`   | bool   | `true`             | 代码含语法错误时仍继续高亮                                             |
 
 ## 命令

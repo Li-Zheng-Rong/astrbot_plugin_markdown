@@ -57,6 +57,54 @@ async def test_render_math(renderer):
 
 
 @pytest.mark.asyncio
+async def test_render_escaped_math_delimiters(renderer):
+    """Renders LaTeX math with \\(...\\) and \\[...\\] delimiters."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": "Inline: \\(E = mc^2\\)\n\nDisplay:\n\\[\nx = \\frac{-b}{2a}\n\\]",
+            "options": {"theme": "light", "fontSize": 16, "footer": ""},
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+
+    assert "katex" in html.lower()
+    assert "katex-display" in html.lower()
+
+
+@pytest.mark.asyncio
+async def test_render_escaped_math_delimiters_can_be_disabled(renderer):
+    """Leaves \\(...\\) delimiters as text when escaped delimiter support is off."""
+    await renderer._ensure_browser()
+    await renderer._page.evaluate(
+        "(args) => renderMarkdown(args.text, args.options)",
+        {
+            "text": "Inline: \\(E = mc^2\\)",
+            "options": {
+                "theme": "light",
+                "fontSize": 16,
+                "footer": "",
+                "engine": {
+                    "katex": {
+                        "enableEscapedDelimiters": False,
+                    },
+                },
+            },
+        },
+    )
+    await renderer._page.wait_for_function("window.__renderComplete === true")
+
+    text = await renderer._page.eval_on_selector("#content", "el => el.textContent")
+    html = await renderer._page.eval_on_selector("#content", "el => el.innerHTML")
+
+    assert "(E = mc^2)" in text
+    assert "katex" not in html.lower()
+
+
+@pytest.mark.asyncio
 async def test_render_table(renderer):
     """Renders a markdown table."""
     md = "| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |"

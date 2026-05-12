@@ -28,10 +28,36 @@ class TestComputeMarkdownScore:
         score = compute_markdown_score(text)
         assert score >= 3
 
+    def test_escaped_bracket_display_math(self):
+        text = "The formula:\n\\[x = \\frac{-b}{2a}\\]"
+        score = compute_markdown_score(text)
+        assert score >= 3
+
+    def test_escaped_bracket_display_math_can_be_disabled(self):
+        text = "The formula:\n\\[x = \\frac{-b}{2a}\\]"
+        score = compute_markdown_score(
+            text,
+            enable_escaped_math_delimiters=False,
+        )
+        assert score == 0
+
     def test_inline_math(self):
         text = "Einstein's equation $E = mc^2$ is famous."
         score = compute_markdown_score(text)
         assert score >= 2
+
+    def test_escaped_parenthesis_inline_math(self):
+        text = "Einstein's equation \\(E = mc^2\\) is famous."
+        score = compute_markdown_score(text)
+        assert score >= 2
+
+    def test_escaped_parenthesis_inline_math_can_be_disabled(self):
+        text = "Einstein's equation \\(E = mc^2\\) is famous."
+        score = compute_markdown_score(
+            text,
+            enable_escaped_math_delimiters=False,
+        )
+        assert score == 0
 
     def test_bold_text(self):
         text = "This is **bold** text."
@@ -174,7 +200,16 @@ class TestShouldRender:
             score_threshold=2,
             force_render_char_threshold=500,
         ) is False
-            char_threshold=100,
-            score_threshold=2,
-            force_render_char_threshold=500,
-        ) is False
+
+    def test_escaped_math_delimiters_do_not_render_when_disabled(self):
+        text = "Inline \\(E = mc^2\\) " + "x" * 100
+        assert (
+            should_render(
+                text,
+                char_threshold=100,
+                score_threshold=2,
+                force_render_char_threshold=0,
+                enable_escaped_math_delimiters=False,
+            )
+            is False
+        )

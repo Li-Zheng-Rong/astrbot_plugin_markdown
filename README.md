@@ -18,7 +18,8 @@ XSS attacks.
 ## Features
 
 - Fenced code blocks with syntax highlighting for 190+ languages.
-- Inline and display LaTeX math via KaTeX (`$...$` and `$$...$$`).
+- Inline and display LaTeX math via KaTeX (`$...$`, `$$...$$`,
+  `\(...\)`, and `\[...\]`).
 - Superscript (`^text^`), subscript (`~text~`), ==highlight== (`==text==`), and
   footnotes (`[^1]`).
 - Full CommonMark support: headings, tables, lists, blockquotes, links, images,
@@ -115,6 +116,7 @@ changes take effect immediately without restarting the plugin.
 | `katex_throw_on_error`  | bool   | `false`            | Throw on invalid LaTeX instead of rendering an error message inline.                                       |
 | `katex_output`          | string | `"htmlAndMathml"`  | KaTeX output format: `html`, `mathml`, or `htmlAndMathml`.                                                 |
 | `katex_trust`           | bool   | `false`            | Allow KaTeX commands that generate extended HTML (e.g. `\href`, `\url`). Output is sanitized by DOMPurify.   |
+| `katex_escaped_delimiters` | bool | `true`             | Enable LaTeX math delimiters `\(...\)` and `\[...\]`.                                                      |
 | `hljs_ignore_illegals`  | bool   | `true`             | Continue highlighting even when code contains syntax errors for the declared language.                      |
 
 ## Commands

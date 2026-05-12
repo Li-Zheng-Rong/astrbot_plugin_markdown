@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import re
 
-# (pattern, score, description)
+_ESCAPED_MATH_RULES: list[tuple[re.Pattern, int]] = [
+    # LaTeX display math using escaped bracket delimiters
+    (re.compile(r"\\\[[\s\S]+?\\\]", re.MULTILINE), 3),
+    # LaTeX inline math using escaped parenthesis delimiters
+    (re.compile(r"\\\((?!\s)[\s\S]+?(?<!\s)\\\)"), 2),
+]
+
+# (pattern, score)
 _MARKDOWN_RULES: list[tuple[re.Pattern, int]] = [
     # Fenced code blocks — strong indicator
     (re.compile(r"```[\s\S]*?```", re.MULTILINE), 3),
@@ -37,14 +44,21 @@ _MARKDOWN_RULES: list[tuple[re.Pattern, int]] = [
 ]
 
 
-def compute_markdown_score(text: str) -> int:
+def compute_markdown_score(
+    text: str,
+    *,
+    enable_escaped_math_delimiters: bool = True,
+) -> int:
     """Compute a score indicating how much markdown syntax the text contains.
 
     Each matching pattern adds its weight to the total score.
     Duplicate matches of the same pattern are counted only once.
     """
     score = 0
-    for pattern, weight in _MARKDOWN_RULES:
+    rules = _MARKDOWN_RULES
+    if enable_escaped_math_delimiters:
+        rules = [*_ESCAPED_MATH_RULES, *_MARKDOWN_RULES]
+    for pattern, weight in rules:
         if pattern.search(text):
             score += weight
     return score
@@ -56,6 +70,7 @@ def should_render(
     char_threshold: int = 100,
     score_threshold: int = 2,
     force_render_char_threshold: int = 500,
+    enable_escaped_math_delimiters: bool = True,
 ) -> bool:
     """Decide whether the text should be rendered as a markdown image.
 
@@ -69,4 +84,10 @@ def should_render(
         return True
     if len(text) < char_threshold:
         return False
-    return compute_markdown_score(text) >= score_threshold
+    return (
+        compute_markdown_score(
+            text,
+            enable_escaped_math_delimiters=enable_escaped_math_delimiters,
+        )
+        >= score_threshold
+    )
